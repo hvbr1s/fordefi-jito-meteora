@@ -130,7 +130,7 @@ async function main(){
 
     // Create JSON
     const jsonBody = {
-        "vault_id": process.env.VAULT_ID, // Replace with your vault ID
+        "vault_id": "9597e08a-32a8-4f96-a043-a3e7f1675f8d", // Replace with your vault ID
         "signer_type": "api_signer",
         "sign_mode": "auto", // IMPORTANT
         "type": "solana_transaction",
@@ -145,7 +145,7 @@ async function main(){
 
     // Write json body to file
     fs.writeFileSync(
-        './txs/request_body.json',
+        './txs/serialized_tx.json',
         JSON.stringify(jsonBody, null, 2), 
         'utf8'
     );

@@ -125,11 +125,12 @@ async function main(){
             "data": serializedV0Message,  // For legacy transactions, use `serializedLegacyMessage`
             "chain": "solana_mainnet"
         },
+        "wait_for_state": "signed"
     };
 
     // Write json body to file
     fs.writeFileSync(
-        './txs/request_body.json',
+        './txs/serialized_tx.json',
         JSON.stringify(jsonBody, null, 2), 
         'utf8'
     );
