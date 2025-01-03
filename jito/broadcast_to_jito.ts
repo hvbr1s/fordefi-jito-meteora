@@ -11,7 +11,6 @@ async function main(): Promise<void> {
     const fileContent = fs.readFileSync('./txs/tx_to_broadcast.json', 'utf8');
     const data = JSON.parse(fileContent);
     const transactionId = data.id;
-    console.log(`Preparing to push tx -> ${transactionId} ->${transactionId}`);
 
     // 2. Prep variables
     const accessToken = process.env.FORDEFI_API_TOKEN || '';
@@ -44,7 +43,9 @@ async function main(): Promise<void> {
       jitoPayload, 
       { headers }
     )
-    console.log(`Successfully sent transaction to Jito. Response: ${JSON.stringify(response.data, null, 2)}`);
+    console.log(
+      `\n\nSuccessfully sent transaction to Jito!📡\nhttps://solana.fm/tx/${response.data.result}`
+    );
 
   } catch (error: any) {
     console.error(`Error sending transaction: ${error}`);
@@ -56,7 +57,6 @@ async function main(): Promise<void> {
   }
 }
 
-// Execute main
 main().catch((err) => {
   console.error('Unhandled error:', err);
 });

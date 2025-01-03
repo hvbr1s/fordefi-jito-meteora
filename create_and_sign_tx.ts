@@ -2,8 +2,11 @@ import fs from 'fs';
 import * as axios from 'axios';
 import { signWithApiSigner } from './signing/signer';
 import { broadcast_tx } from './utils/prepare_request'
+import dotenv from 'dotenv'
+
 
 // Get Fordefi API token
+dotenv.config()
 const accessToken = process.env.FORDEFI_API_TOKEN;
 
 // Fetch serialized tx from json file
