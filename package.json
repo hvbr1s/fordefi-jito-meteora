@@ -4,9 +4,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "remove": "ts-node --project tsconfig.json serialize_remove_liquidity.ts",
-    "swap": "ts-node --project tsconfig.json serialize_swap.ts",
-    "create": "ts-node --project tsconfig.json create_and_sign_tx.ts",
+    "transfer": "ts-node --project tsconfig.json ./transfer_sol.ts",
+    "remove-meteora": "ts-node --project tsconfig.json ./meteora/serialize_remove_liquidity.ts",
+    "swap-meteora": "ts-node --project tsconfig.json ./meteora/serialize_swap.ts",
+    "create-tx": "ts-node --project tsconfig.json create_and_sign_tx.ts",
     "jito": "ts-node --project tsconfig.json ./jito/broadcast_to_jito.ts"
   },
   "keywords": [],
