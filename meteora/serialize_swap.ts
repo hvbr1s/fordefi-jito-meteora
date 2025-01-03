@@ -8,7 +8,7 @@ import { getPriorityFees } from '../utils/get_priority_fees'
 import { getCuLimit } from '../utils/get_cu_limit'
 import dotenv from 'dotenv'
 
-
+///// TO CONFIGURE 
 dotenv.config()
 const QUICKNODE_KEY = process.env.QUICKNODE_MAINNET_KEY
 const VAULT_ID = process.env.VAULT_ID
@@ -18,6 +18,7 @@ const SOL_USDC_POOL = new web3.PublicKey('BVRbyLjjfSBcoyiYFuxbgKYnWuiFaF9CSXEa5v
 const TRADER = new web3.PublicKey(`${FORDEFI_SOLANA_ADDRESS}`)
 const JITO_TIP = 1000 // Jito tip amount in lamports (1 SOL = 1e9 lamports)
 const SWAP_AMOUNT = new BN(100);
+///// TO CONFIGURE 
 
 async function createDlmm(){
 
@@ -43,7 +44,7 @@ async function swapQuote(pool: any){
 
 async function swapIxGetter(pool:any, swapQuote: any, TRADER: web3.PublicKey){
 
-    // Craft swap tx
+    // Create swap Tx
     const swapTx = await pool.swap({
         inToken: pool.tokenX.publicKey,
         binArraysPubkey: swapQuote.binArraysPubkey,
@@ -54,7 +55,8 @@ async function swapIxGetter(pool:any, swapQuote: any, TRADER: web3.PublicKey){
         outToken: pool.tokenY.publicKey,
     });
 
-    return swapTx
+    // return only the instructions
+    return swapTx.instructions
 }
 
 async function main(){
@@ -75,8 +77,7 @@ async function main(){
     const priorityFee = await getPriorityFees() // OR set a custom number in lamports
 
     // Get Meteora-specific swap instructions
-    const getSwapIx =  await swapIxGetter(getdlmmPool, getQuote, TRADER)
-    const swapIx = getSwapIx.instructions
+    const swapIx =  await swapIxGetter(getdlmmPool, getQuote, TRADER)
 
     // Create Tx
     const swapTx = new web3.Transaction()
