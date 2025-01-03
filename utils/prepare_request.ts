@@ -18,7 +18,7 @@ export async function broadcast_tx(
         'x-timestamp': timestamp,
         'Content-Type': 'application/json',
       },
-      validateStatus: () => true, // We'll manually handle status checks
+      validateStatus: () => true,
     });
 
     if (respTx.status < 200 || respTx.status >= 300) {
@@ -100,7 +100,6 @@ export async function get_tx(
       }
       throw new Error(errorMessage);
     }
-
     // Otherwise, it's a network or unknown error
     throw new Error(`Network error occurred: ${error.message ?? error}`);
   }
