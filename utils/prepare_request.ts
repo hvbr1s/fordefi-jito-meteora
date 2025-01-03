@@ -66,7 +66,7 @@ export async function get_tx(
     const respTx = await axios.request({
       method: 'GET',
       url,
-      data: requestBody,
+      params: requestBody ? JSON.parse(requestBody) : {},
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'x-signature': signature,

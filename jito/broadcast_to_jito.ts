@@ -11,17 +11,18 @@ async function main(): Promise<void> {
     const fileContent = fs.readFileSync('./txs/tx_to_broadcast.json', 'utf8');
     const data = JSON.parse(fileContent);
     const transactionId = data.id;
-    console.log(`Preparing to push ${transactionId}`);
+    console.log(`Preparing to push tx -> ${transactionId} ->${transactionId}`);
 
     // 2. Gather variables
     const accessToken = process.env.FORDEFI_API_TOKEN || '';
     const path = `/api/v1/transactions/${transactionId}`;
-    const requestBody = '';
+    const requestBody = {};
     const timestamp = new Date().getTime();; 
-    
+
     // 3. Create payload to sign
     const payload = `${path}|${timestamp}|${requestBody}`;
     const signature = await signWithApiSigner(payload);
+    console.log(`Signature -> ${signature}`)
 
     // 4. Fetch raw signature from get_tx
     const fetchRawSignature = await get_tx(path, accessToken, signature, timestamp, requestBody);

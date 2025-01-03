@@ -22,9 +22,8 @@ async function ping(
   accessToken: string,
   payload: string
 ): Promise<axios.AxiosResponse> {
-  // Create signature using your sign() function
+
   const signature = await signWithApiSigner(payload);
-  console.log(signature)
 
   try {
     const respTx = await broadcast_tx(path, accessToken, signature, timestamp, requestBody);
