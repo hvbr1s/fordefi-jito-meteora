@@ -16,6 +16,7 @@ const FORDEFI_SOLANA_ADDRESS = process.env.FORDEFI_SOLANA_ADDRESS
 const connection = new web3.Connection(`https://winter-solemn-sun.solana-mainnet.quiknode.pro/${QUICKNODE_KEY}/`)
 const SOL_USDC_POOL = new web3.PublicKey('BVRbyLjjfSBcoyiYFuxbgKYnWuiFaF9CSXEa5vdSZ9Hh') // info can be fetched from block explorer'
 const TRADER = new web3.PublicKey(`${FORDEFI_SOLANA_ADDRESS}`)
+const JITO_TIP = 1000 // Jito tip amount in lamports (1 SOL = 1e9 lamports)
 
 async function createDlmm(){
 
@@ -27,9 +28,8 @@ async function createDlmm(){
 async function userPosition() {
 
     const dlmmPool = await createDlmm()
-    // const activeBin = await dlmmPool.getActiveBin();
-
     const { userPositions } = await dlmmPool.getPositionsByUserAndLbPair(TRADER);
+    // const activeBin = await dlmmPool.getActiveBin();
     // const binData = userPositions[0].positionData.positionBinData;
     
     return userPositions
@@ -46,8 +46,8 @@ async function removeLiquidity(onePosition: any, TRADER: web3.PublicKey){
         position: onePosition.publicKey,
         user: TRADER,
         binIds: binIdsToRemove,
-        bps: new BN(10000), // we remove 1000 bps (100%) of the positions
-        shouldClaimAndClose: true, // and we also close the account and rewards
+        bps: new BN(10000), // we remove 10000 bps (100%) of the positions
+        shouldClaimAndClose: true, // and we also close the account and collect unclaimed rewards
     });
 
     return removeLiquidityTx
@@ -62,8 +62,6 @@ async function main(){
         publicKey.equals(new web3.PublicKey('4s7jqEGTGSBAJQVELMafgzUmaGgB2XjMQENm9A58Tad8')) // adjust depending on output of myPositions
       );
 
-    const removeLiquidityTx = await removeLiquidity(onePosition, TRADER)
-    
     // Create Jito client instance
     const client = jito.searcher.searcherClient("frankfurt.mainnet.block-engine.jito.wtf") // can customize
 
@@ -71,50 +69,56 @@ async function main(){
     const jitoTipAccount = await getJitoTipAccount(client)
     console.log(`Tip account -> ${jitoTipAccount}`)
 
-   const jitoTip = 1000 // Jito tip amount in lamports (1 SOL = 1e9 lamports)
    const priorityFee = await getPriorityFees() // OR set a custom number
    console.log(`Priority fee -> ${priorityFee}`)
-   // const cuLimit = await getCuLimit(tippingTx, connection) // OPTIONAL -> the Meteora SDK is doing it for us`
 
-   const tippingTx = new web3.Transaction()
+   const removeLiquidityTx = new web3.Transaction()
+
+   removeLiquidityTx
    .add(
        web3.SystemProgram.transfer({
            fromPubkey: TRADER,
            toPubkey: jitoTipAccount,
-           lamports: jitoTip, 
+           lamports: JITO_TIP, 
        })
    )
-   // OPTIONAL -> Setting CU limits and priority fee to instructions
    .add(
-       web3.ComputeBudgetProgram.setComputeUnitPrice({
-           microLamports: priorityFee, 
-       })
-   )
-   // .add(
-   //     web3.ComputeBudgetProgram.setComputeUnitLimit({
-   //         units: targetComputeUnitsAmount ?? 100_000 //
-   //     })
-   // )
+        web3.ComputeBudgetProgram.setComputeUnitPrice({
+            microLamports: priorityFee, 
+        })
+    )   
+    
+    // OPTIONAL -> set CU limits the Meteora SDK is doing it for us`
+    // const cuLimit = await getCuLimit(removeLiquidityTx, connection) 
+    // removeLiquidityTx
+    // .add(
+    //     web3.ComputeBudgetProgram.setComputeUnitLimit({
+    //         units: targetComputeUnitsAmount ?? 100_000 //
+    //     })
+    // )
+
+    // Get remove liquidity instructions from Meteora
+    const removeLiquidityTxThrowaway = await removeLiquidity(onePosition, TRADER)
+    
+    // Is Array check
+    const removeLiquidityTxArray = Array.isArray(removeLiquidityTxThrowaway) 
+        ? removeLiquidityTxThrowaway 
+        : [removeLiquidityTxThrowaway];
+
+    // Extract Meteora-specific instructions from first transaction and add to our second transaction
+    for (const tx of removeLiquidityTxArray) {
+        removeLiquidityTx.add(...tx.instructions);
+    }
 
     // Set blockhash + fee payer
     const { blockhash } = await connection.getLatestBlockhash();
-    tippingTx.recentBlockhash = blockhash;
-    tippingTx.feePayer = TRADER;
-
-    // Is Array check
-    const removeLiquidityTxs = Array.isArray(removeLiquidityTx) 
-        ? removeLiquidityTx 
-        : [removeLiquidityTx];
-
-    // Add removeLiquidityTx instructions to Jito tippingTx instructions
-    for (const tx of removeLiquidityTxs) {
-        tippingTx.add(...tx.instructions);
-    }
+    removeLiquidityTx.recentBlockhash = blockhash;
+    removeLiquidityTx.feePayer = TRADER;
 
     // Compile + serialize the merged transactions
-    const mergedMessage = tippingTx.compileMessage();
+    const comiledMessage = removeLiquidityTx.compileMessage();
     const serializedV0Message = Buffer.from(
-        mergedMessage.serialize()
+        comiledMessage.serialize()
     ).toString('base64');
 
     // Create JSON

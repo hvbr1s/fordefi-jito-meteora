@@ -16,9 +16,8 @@ const FORDEFI_SOLANA_ADDRESS = process.env.FORDEFI_SOLANA_ADDRESS
 const connection = new web3.Connection(`https://winter-solemn-sun.solana-mainnet.quiknode.pro/${QUICKNODE_KEY}/`)
 const SOL_USDC_POOL = new web3.PublicKey('BVRbyLjjfSBcoyiYFuxbgKYnWuiFaF9CSXEa5vdSZ9Hh') // info can be fetched from block explorer'
 const TRADER = new web3.PublicKey(`${FORDEFI_SOLANA_ADDRESS}`)
-
-// Swap params
-const swapAmount = new BN(100);
+const JITO_TIP = 1000 // Jito tip amount in lamports (1 SOL = 1e9 lamports)
+const SWAP_AMOUNT = new BN(100);
 
 async function createDlmm(){
 
@@ -33,7 +32,7 @@ async function swapQuote(pool: any){
     const swapYtoX = true;
     const binArrays = await pool.getBinArrayForSwap(swapYtoX);
     const swapQuote = await pool.swapQuote(
-    swapAmount,
+    SWAP_AMOUNT,
     swapYtoX,
     new BN(10),
     binArrays
@@ -42,13 +41,13 @@ async function swapQuote(pool: any){
     return swapQuote
 }
 
-async function swapTx(pool:any, swapQuote: any, TRADER: web3.PublicKey){
+async function swapIxGetter(pool:any, swapQuote: any, TRADER: web3.PublicKey){
 
     // Craft swap tx
     const swapTx = await pool.swap({
         inToken: pool.tokenX.publicKey,
         binArraysPubkey: swapQuote.binArraysPubkey,
-        inAmount: swapAmount,
+        inAmount: SWAP_AMOUNT,
         lbPair: pool.pubkey,
         user: TRADER,
         minOutAmount: swapQuote.minOutAmount,
@@ -62,36 +61,47 @@ async function main(){
 
     const getdlmmPool =  await createDlmm()
 
+    // Get swap quote from Meteora
     const getQuote = await swapQuote(getdlmmPool)
-
-    const getSwapTx =  await swapTx(getdlmmPool, getQuote, TRADER)
     
     // Create Jito client instance
-    const client = jito.searcher.searcherClient("frankfurt.mainnet.block-engine.jito.wtf") // can customize
+    const client = jito.searcher.searcherClient("frankfurt.mainnet.block-engine.jito.wtf") // can customize the client enpoint
 
     // Get Jito Tip Account
     const jitoTipAccount = await getJitoTipAccount(client)
-    console.log(`Tip account -> ${jitoTipAccount}`)
+    console.log(`Tip amount -> ${JITO_TIP}`)
 
-    const jitoTip = 1000 // Jito tip amount in lamports (1 SOL = 1e9 lamports)
-    const priorityFee = await getPriorityFees() // OR set a custom number
-    console.log(`Priority fee -> ${priorityFee}`)
-    // const cuLimit = await getCuLimit(tippingTx, connection) // NOT Required -> the Meteora SDK is doing it for us`
+    // Get Priority fee
+    const priorityFee = await getPriorityFees() // OR set a custom number in lamports
 
-    const tippingTx = new web3.Transaction()
+    // Get Meteora-specific swap instructions
+    const getSwapIx =  await swapIxGetter(getdlmmPool, getQuote, TRADER)
+    const swapIx = getSwapIx.instructions
+
+    // Create Tx
+    const swapTx = new web3.Transaction()
+
+    // Add instructions
+    swapTx
     .add(
         web3.SystemProgram.transfer({
             fromPubkey: TRADER,
             toPubkey: jitoTipAccount,
-            lamports: jitoTip, 
+            lamports: JITO_TIP, 
         })
     )
-    // OPTIONAL -> Setting CU limits and priority fee to instructions
     .add(
         web3.ComputeBudgetProgram.setComputeUnitPrice({
             microLamports: priorityFee, 
         })
     )
+    .add(
+        ...swapIx
+    )
+
+    // OPTIONAL -> setting CU limit is already handled by the Meteora sdk
+    // const cuLimit = await getCuLimit(tippingTx, connection)
+    // swapTx
     // .add(
     //     web3.ComputeBudgetProgram.setComputeUnitLimit({
     //         units: targetComputeUnitsAmount ?? 100_000 //
@@ -100,24 +110,13 @@ async function main(){
 
     // Set blockhash + fee payer
     const { blockhash } = await connection.getLatestBlockhash();
-    tippingTx.recentBlockhash = blockhash;
-    tippingTx.feePayer = TRADER;
+    swapTx.recentBlockhash = blockhash;
+    swapTx.feePayer = TRADER;
 
-    // Is Array check
-    const swapTxs = Array.isArray(getSwapTx) 
-        ? getSwapTx 
-        : [getSwapTx];
-
-    // Add swapTxs instructions to Jito tippingTx instructions
-    for (const tx of swapTxs) {
-        tippingTx.add(...tx.instructions);
-    }
-
-    // FOR DEBUGGING ONLY
+    // INSPECT TX - FOR DEBUGGING ONLY
 
     // console.log("Tx instructions:");
-
-    // tippingTx.instructions.forEach((ix, idx) => {
+    // swapTx.instructions.forEach((ix, idx) => {
     // console.log(`Instruction #${idx}:`);
     // console.log("  ProgramID:", ix.programId.toBase58());
     // console.log("  Keys:", ix.keys.map(k => k.pubkey.toBase58()));
@@ -125,9 +124,9 @@ async function main(){
     // });
 
     // Compile + serialize the swap tx
-    const finalSwapTx = tippingTx.compileMessage();
+    const compiledSwapTx = swapTx.compileMessage();
     const serializedV0Message = Buffer.from(
-        finalSwapTx.serialize()
+        compiledSwapTx.serialize()
     ).toString('base64');
 
     // Create JSON
