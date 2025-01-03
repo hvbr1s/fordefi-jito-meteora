@@ -61,6 +61,7 @@ async function main(){
 
     const getdlmmPool =  await createDlmm()
 
+    // Get swap quote from Meteora
     const getQuote = await swapQuote(getdlmmPool)
     
     // Create Jito client instance
@@ -70,7 +71,7 @@ async function main(){
     const jitoTipAccount = await getJitoTipAccount(client)
     console.log(`Tip amount -> ${JITO_TIP}`)
 
-    // Set Priority fee
+    // Get Priority fee
     const priorityFee = await getPriorityFees() // OR set a custom number in lamports
 
     // Get Meteora-specific swap instructions

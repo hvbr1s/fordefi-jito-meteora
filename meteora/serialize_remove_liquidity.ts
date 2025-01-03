@@ -62,9 +62,6 @@ async function main(){
         publicKey.equals(new web3.PublicKey('4s7jqEGTGSBAJQVELMafgzUmaGgB2XjMQENm9A58Tad8')) // adjust depending on output of myPositions
       );
 
-    // This is a throwaway tx we'll only use for its instructions
-    const removeLiquidityTx = await removeLiquidity(onePosition, TRADER)
-    
     // Create Jito client instance
     const client = jito.searcher.searcherClient("frankfurt.mainnet.block-engine.jito.wtf") // can customize
 
@@ -75,9 +72,9 @@ async function main(){
    const priorityFee = await getPriorityFees() // OR set a custom number
    console.log(`Priority fee -> ${priorityFee}`)
 
-   const removeLiquidityTx2 = new web3.Transaction()
+   const removeLiquidityTx = new web3.Transaction()
 
-   removeLiquidityTx2
+   removeLiquidityTx
    .add(
        web3.SystemProgram.transfer({
            fromPubkey: TRADER,
@@ -92,30 +89,34 @@ async function main(){
     )   
     
     // OPTIONAL -> set CU limits the Meteora SDK is doing it for us`
-    // const cuLimit = await getCuLimit(tippingTx, connection) 
+    // const cuLimit = await getCuLimit(removeLiquidityTx, connection) 
+    // removeLiquidityTx
     // .add(
     //     web3.ComputeBudgetProgram.setComputeUnitLimit({
     //         units: targetComputeUnitsAmount ?? 100_000 //
     //     })
     // )
 
-    // Set blockhash + fee payer
-    const { blockhash } = await connection.getLatestBlockhash();
-    removeLiquidityTx2.recentBlockhash = blockhash;
-    removeLiquidityTx2.feePayer = TRADER;
-
+    // Get remove liquidity instructions from Meteora
+    const removeLiquidityTxThrowaway = await removeLiquidity(onePosition, TRADER)
+    
     // Is Array check
-    const removeLiquidityTxs = Array.isArray(removeLiquidityTx) 
-        ? removeLiquidityTx 
-        : [removeLiquidityTx];
+    const removeLiquidityTxArray = Array.isArray(removeLiquidityTxThrowaway) 
+        ? removeLiquidityTxThrowaway 
+        : [removeLiquidityTxThrowaway];
 
     // Extract Meteora-specific instructions from first transaction and add to our second transaction
-    for (const tx of removeLiquidityTxs) {
-        removeLiquidityTx2.add(...tx.instructions);
+    for (const tx of removeLiquidityTxArray) {
+        removeLiquidityTx.add(...tx.instructions);
     }
 
+    // Set blockhash + fee payer
+    const { blockhash } = await connection.getLatestBlockhash();
+    removeLiquidityTx.recentBlockhash = blockhash;
+    removeLiquidityTx.feePayer = TRADER;
+
     // Compile + serialize the merged transactions
-    const comiledMessage = removeLiquidityTx2.compileMessage();
+    const comiledMessage = removeLiquidityTx.compileMessage();
     const serializedV0Message = Buffer.from(
         comiledMessage.serialize()
     ).toString('base64');
