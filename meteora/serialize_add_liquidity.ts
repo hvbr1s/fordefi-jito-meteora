@@ -8,7 +8,15 @@ import { getPriorityFees } from '../utils/get_priority_fees'
 import { getCuLimit } from '../utils/get_cu_limit'
 import dotenv from 'dotenv'
 
-//// TO CONFIGURE 
+
+///////////// WIP ////////////
+//////////////////////////////
+//////////////////////////////
+//////////////////////////////
+//////////////////////////////
+//////////////////////////////
+/////// COME BACK LATER //////
+
 dotenv.config()
 const QUICKNODE_KEY = process.env.QUICKNODE_MAINNET_KEY
 const VAULT_ID = process.env.VAULT_ID
@@ -17,7 +25,6 @@ const connection = new web3.Connection(`https://winter-solemn-sun.solana-mainnet
 const SOL_USDC_POOL = new web3.PublicKey('BVRbyLjjfSBcoyiYFuxbgKYnWuiFaF9CSXEa5vdSZ9Hh') // info can be fetched from block explorer'
 const TRADER = new web3.PublicKey(`${FORDEFI_SOLANA_ADDRESS}`)
 const JITO_TIP = 1000 // Jito tip amount in lamports (1 SOL = 1e9 lamports)
-//// TO CONFIGURE 
 
 async function createDlmm(){
 
@@ -147,3 +154,5 @@ async function main(){
 }
 
 main().catch(console.error);
+
+// docs -> https://docs.meteora.ag/dynamic-pools-integration/using-typescript-client-sdk

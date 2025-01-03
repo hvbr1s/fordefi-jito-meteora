@@ -13,26 +13,24 @@ A tool for creating and broadcasting Solana transactions with Jito's Block Engin
 
 1. Create a Fordefi API user and API Signer ([tutorial](https://docs.fordefi.com/reference/getting-started))
 2. Clone this repository
-3. Create a `.env` file in the root directory with the following variables:
+3. Run `npm install` to install all the dependencies.
+4. Create a `.env` file in the root directory with the following variables:
    ```
    FORDEFI_API_TOKEN=your_api_token
    VAULT_ID=your_solana_vault_id
    FORDEFI_SOLANA_ADDRESS=your_solana_vault_address
    QUICKNODE_MAINNET_KEY=your_rpc_access_token
    ```
-4. Place your API Signer's `.pem` private key file in the `/secret` directory in the root folder.
+5. Place your API Signer's `.pem` private key file in the `/secret` directory in the root folder.
 
-## Configuration
+## Configuration for Meteora operations:
 
-Open `craft_request.py` and configure the following parameters:
-- `jito_tip_amount`: Amount to tip Jito validators
-- `priority_fee`: Transaction priority fee
+Navigate to the `./meteora` folder, select a script and add your variables to the `TO CONFIGURE` section
 
-## Usage
+## Example usage for a swap on Meteora
 
 Execute the following scripts in order:
 
-1. `python craft_request.py` - Prepares the serialized tx payload
-2. `python create_tx.py` - Creates the transaction
-3. `python sign_tx.py` - Signs the transaction using Fordefi
-4. `python broadcast_to_jito.py` - Broadcasts the signed transaction to Jito's block engine.
+1. `npm run swap-meteora` - Prepares the serialized tx payload
+2. `npm run create-tx` - Creates and signs the transaction
+3. `npm run jito` - Broadcast the transaction to Jito and returns the transaction hash
