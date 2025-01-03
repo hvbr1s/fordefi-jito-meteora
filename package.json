@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "ts-node --project tsconfig.json ./meteora/serialize_swap_test.ts",
     "transfer": "ts-node --project tsconfig.json ./transfer_sol.ts",
     "remove-meteora": "ts-node --project tsconfig.json ./meteora/serialize_remove_liquidity.ts",
     "swap-meteora": "ts-node --project tsconfig.json ./meteora/serialize_swap.ts",
