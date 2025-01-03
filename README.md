@@ -11,15 +11,16 @@ A tool for creating and broadcasting Solana transactions with Jito's Block Engin
 
 ## Setup
 
-1. Clone this repository
-2. Create a `.env` file in the root directory with the following variables:
+1. Create a Fordefi API user and API Signer ([tutorial](https://docs.fordefi.com/reference/getting-started))
+2. Clone this repository
+3. Create a `.env` file in the root directory with the following variables:
    ```
    FORDEFI_API_TOKEN=your_api_token
    VAULT_ID=your_solana_vault_id
    FORDEFI_SOLANA_ADDRESS=your_solana_vault_address
    QUICKNODE_MAINNET_KEY=your_rpc_access_token
    ```
-3. Place your API Signer's `.pem` private key file in the `/secret` directory in the root folder.
+4. Place your API Signer's `.pem` private key file in the `/secret` directory in the root folder.
 
 ## Configuration
 

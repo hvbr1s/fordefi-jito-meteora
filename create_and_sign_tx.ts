@@ -1,7 +1,7 @@
 import fs from 'fs';
 import * as axios from 'axios';
 import { signWithApiSigner } from './signing/signer';
-import { broadcast_tx } from './utils/prepare_request'
+import { createAndSignTx } from './utils/process_tx'
 import dotenv from 'dotenv'
 
 
@@ -13,7 +13,7 @@ const accessToken = process.env.FORDEFI_API_TOKEN;
 const requestJson = JSON.parse(fs.readFileSync('./txs/serialized_tx.json', 'utf-8'));
 const requestBody = JSON.stringify(requestJson);
 
-// Define path and create timestamp
+// Define endpoint and create timestamp
 // const pathEndpoint = '/api/v1/transactions';
 const pathEndpoint = '/api/v1/transactions/create-and-wait';
 const timestamp = new Date().getTime();
@@ -26,10 +26,13 @@ async function ping(
   payload: string
 ): Promise<axios.AxiosResponse> {
 
+  // Send tx payload to API Signer for signature
   const signature = await signWithApiSigner(payload);
 
   try {
-    const respTx = await broadcast_tx(path, accessToken, signature, timestamp, requestBody);
+
+    // Send signed payload to Fordefi for MPC signature
+    const respTx = await createAndSignTx(path, accessToken, signature, timestamp, requestBody);
 
     // Throws for non-2xx status codes
     if (respTx.status < 200 || respTx.status >= 300) {
@@ -37,6 +40,7 @@ async function ping(
     }
 
     return respTx;
+
   } catch (error: any) {
     // If the error is an Axios error, we can parse its details
     if (error.response) {
@@ -71,7 +75,7 @@ async function main(): Promise<void> {
 
     // Save signed tx to file
     fs.writeFileSync('./txs/tx_to_broadcast.json', JSON.stringify(data, null, 2), 'utf-8');
-    console.log("Data has been saved to 'tx_to_broadcast.json'");
+    console.log("Data has been saved to './txs/tx_to_broadcast.json'");
   } catch (error: any) {
     console.error(`Error: ${error.message}`);
   }

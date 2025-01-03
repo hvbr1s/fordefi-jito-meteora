@@ -1,7 +1,7 @@
 import fs from 'fs';
 import axios from 'axios';
 import { signWithApiSigner } from '../signing/signer'
-import { get_tx } from '../utils/prepare_request'
+import { get_tx } from '../utils/process_tx'
 
 
 
