@@ -2,11 +2,9 @@ import fs from 'fs'
 import axios from 'axios';
 import * as web3 from '@solana/web3.js'
 import * as jito from 'jito-ts'
-import bs58 from 'bs58';
 import dotenv from 'dotenv'
 import { PublicKey } from '@solana/web3.js';
 import { getJitoTipAccount } from '../utils/get_jito_tip_account'
-import { getPriorityFees } from '../utils/get_priority_fees'
 
 ////// TO CONFIGURE //////
 dotenv.config()
@@ -49,10 +47,10 @@ async function getSwapTxIx(quote: any, user: PublicKey) {
 
     console.log(response.data)
     
-    // The API returns { computeBudgetInstructions, setupInstructions, swapInstruction, cleanupInstruction }
+    // The API returns the following instructions -> { computeBudgetInstructions, setupInstructions, swapInstruction, cleanupInstruction }
     const { computeBudgetInstructions, setupInstructions, swapInstruction, cleanupInstruction } = response.data;
     
-    // Combine all instructions in the correct order
+    // We order them and return them
     return [
         ...(computeBudgetInstructions ?? []),
         ...(setupInstructions ?? []),
@@ -75,7 +73,7 @@ async function main(){
 
     const quote = await getSwapQuote(SWAP_AMOUNT, SLIPPAGE, INPUT_TOKEN, OUTPUT_TOKEN)
 
-    const serializedJupiterSwapTxIx =  await getSwapTxIx(quote, FORDEFI_SOLANA_ADDRESS_PUBKEY)
+    const jupiterSwapTxIx =  await getSwapTxIx(quote, FORDEFI_SOLANA_ADDRESS_PUBKEY)
 
     // Create Jito client instance
     const client = jito.searcher.searcherClient("frankfurt.mainnet.block-engine.jito.wtf") // can customize the client enpoint based on location
@@ -97,7 +95,7 @@ async function main(){
         })
     )
     .add(
-        ...serializedJupiterSwapTxIx
+        ...jupiterSwapTxIx
     )
 
     // Set blockhash + fee payer
@@ -105,8 +103,7 @@ async function main(){
     swapTx.recentBlockhash = blockhash;
     swapTx.feePayer = FORDEFI_SOLANA_ADDRESS_PUBKEY;
 
-    // INSPECT TX - FOR DEBUGGING ONLY
-
+    // INSPECT TX - FOR DEBUGGING ONL
     // console.log("Tx instructions:");
     // swapTx.instructions.forEach((ix, idx) => {
     // console.log(`Instruction #${idx}:`);

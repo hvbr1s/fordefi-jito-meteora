@@ -115,7 +115,6 @@ async function main(){
     swapTx.feePayer = TRADER;
 
     // INSPECT TX - FOR DEBUGGING ONLY
-
     // console.log("Tx instructions:");
     // swapTx.instructions.forEach((ix, idx) => {
     // console.log(`Instruction #${idx}:`);
