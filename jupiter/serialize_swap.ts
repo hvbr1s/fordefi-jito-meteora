@@ -28,7 +28,9 @@ async function getSwapQuote(swap_amount: string, slippage: string, input_token: 
             inputMint:input_token,
             outputMint: output_token,
             amount: swap_amount,
-            slippageBps: slippage
+            slippageBps: slippage,
+            maxAccounts: 12, // Limit accounts involved
+            restrictIntermediateTokens: false, 
         }
     });
     
@@ -39,19 +41,19 @@ async function getSwapTxIx(quote: any, user: PublicKey) {
     const response = await axios.post('https://quote-api.jup.ag/v6/swap-instructions', {
         quoteResponse: quote,
         userPublicKey: user.toBase58(),
+        minimizeSteps: true
     }, {
         headers: {
             'Content-Type': 'application/json'
         }
     });
 
-    console.log(response.data)
+    // We grab the lookUpTable address for later use
+    const lookUpTable = response.data.addressLookupTableAddresses[0]
     
-    // The API returns the following instructions -> { computeBudgetInstructions, setupInstructions, swapInstruction, cleanupInstruction }
+    // The API returns a series of in
     const { computeBudgetInstructions, setupInstructions, swapInstruction, cleanupInstruction } = response.data;
-    
-    // We order them and return them
-    return [
+    const instructions = [
         ...(computeBudgetInstructions ?? []),
         ...(setupInstructions ?? []),
         swapInstruction,
@@ -67,13 +69,30 @@ async function getSwapTxIx(quote: any, user: PublicKey) {
             data: Buffer.from(ix.data, 'base64')
         };
     });
+
+    // We return the instructions and the lookuptable
+    return [
+        instructions, 
+        lookUpTable  
+    ];
 }
 
 async function main(){
 
+
+    // We generate a quote from Jupiter
     const quote = await getSwapQuote(SWAP_AMOUNT, SLIPPAGE, INPUT_TOKEN, OUTPUT_TOKEN)
 
-    const jupiterSwapTxIx =  await getSwapTxIx(quote, FORDEFI_SOLANA_ADDRESS_PUBKEY)
+    // We grab the instructions and the lookup table
+    const [jupiterSwapTxIx, lookupTableAddress] = await getSwapTxIx(quote, FORDEFI_SOLANA_ADDRESS_PUBKEY)
+
+    // We fetch the actual lookup table
+    const lookupTableAccount = await connection.getAddressLookupTable(
+        new web3.PublicKey(lookupTableAddress)
+    ).then(result => result.value);
+    if (!lookupTableAccount) {
+        throw new Error("Lookup table not found");
+    }
 
     // Create Jito client instance
     const client = jito.searcher.searcherClient("frankfurt.mainnet.block-engine.jito.wtf") // can customize the client enpoint based on location
@@ -82,43 +101,34 @@ async function main(){
     const jitoTipAccount = await getJitoTipAccount(client)
     console.log(`Tip amount -> ${JITO_TIP}`)
 
-    // Create Tx
-    const swapTx = new web3.Transaction()
-
-    // Add instructions
-    swapTx
-    .add(
+    // Create all instructions including Jito tip
+    const swapTxIx = [
         web3.SystemProgram.transfer({
             fromPubkey: FORDEFI_SOLANA_ADDRESS_PUBKEY,
             toPubkey: jitoTipAccount,
-            lamports: JITO_TIP, 
-        })
-    )
-    .add(
+            lamports: JITO_TIP,
+        }),
         ...jupiterSwapTxIx
-    )
+    ];
 
-    // Set blockhash + fee payer
+    // Get latest blockhash
     const { blockhash } = await connection.getLatestBlockhash();
-    swapTx.recentBlockhash = blockhash;
-    swapTx.feePayer = FORDEFI_SOLANA_ADDRESS_PUBKEY;
 
-    // INSPECT TX - FOR DEBUGGING ONL
-    // console.log("Tx instructions:");
-    // swapTx.instructions.forEach((ix, idx) => {
-    // console.log(`Instruction #${idx}:`);
-    // console.log("  ProgramID:", ix.programId.toBase58());
-    // console.log("  Keys:", ix.keys.map(k => k.pubkey.toBase58()));
-    // console.log("  Data:", ix.data.toString("hex"));
-    // });
+    // We create a V0 TransactionMessage and add our lookup table
+    const messageV0 = new web3.VersionedTransaction(
+        new web3.TransactionMessage({
+            payerKey: FORDEFI_SOLANA_ADDRESS_PUBKEY,
+            recentBlockhash: blockhash,
+            instructions: swapTxIx
+        }).compileToV0Message([lookupTableAccount])
+    );
 
-    // Compile + serialize the swap tx
-    const compiledSwapTx = swapTx.compileMessage();
-    const serializedV0Message = Buffer.from(
-        compiledSwapTx.serialize()
+    // We serialize the transaction message
+    const serializedMessage = Buffer.from(
+        messageV0.message.serialize()
     ).toString('base64');
 
-    // Create JSON
+    // We create a JSON
     const jsonBody = {
         "vault_id": VAULT_ID, // Replace with your vault ID
         "signer_type": "api_signer",
@@ -127,7 +137,7 @@ async function main(){
         "details": {
             "type": "solana_serialized_transaction_message",
             "push_mode": "manual", // IMPORTANT,
-            "data": serializedV0Message,  // For legacy transactions, use `serializedLegacyMessage`
+            "data": serializedMessage,  // For legacy transactions, use `serializedLegacyMessage`
             "chain": "solana_mainnet"
         },
         "wait_for_state": "signed" // only for create-and-wait
