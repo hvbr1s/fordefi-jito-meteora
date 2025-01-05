@@ -8,16 +8,16 @@ import { getPriorityFees } from '../utils/get_priority_fees'
 import { getCuLimit } from '../utils/get_cu_limit'
 import dotenv from 'dotenv'
 
-//// TO CONFIGURE 
+////// TO CONFIGURE //////
 dotenv.config()
 const QUICKNODE_KEY = process.env.QUICKNODE_MAINNET_KEY
 const VAULT_ID = process.env.VAULT_ID
 const FORDEFI_SOLANA_ADDRESS = process.env.FORDEFI_SOLANA_ADDRESS
-const connection = new web3.Connection(`https://winter-solemn-sun.solana-mainnet.quiknode.pro/${QUICKNODE_KEY}/`)
-const SOL_USDC_POOL = new web3.PublicKey('BVRbyLjjfSBcoyiYFuxbgKYnWuiFaF9CSXEa5vdSZ9Hh') // info can be fetched from block explorer'
+const connection = new web3.Connection(`${QUICKNODE_KEY}`)
+const SOL_USDC_POOL = new web3.PublicKey('HTvjzsfX3yU6BUodCjZ5vZkUrAxMDTrBs3CJaq43ashR') // info can be fetched from block explorer'
 const TRADER = new web3.PublicKey(`${FORDEFI_SOLANA_ADDRESS}`)
 const JITO_TIP = 1000 // Jito tip amount in lamports (1 SOL = 1e9 lamports)
-//// TO CONFIGURE 
+////// TO CONFIGURE //////
 
 async function createDlmm(){
 
@@ -57,14 +57,18 @@ async function removeLiquidity(onePosition: any, TRADER: web3.PublicKey){
 async function main(){
 
     const myPositions = await userPosition()
-    console.log(myPositions)
+
+    // Extract PublicKey from first position
+    const myPositionPubkey = myPositions[0].publicKey.toString()
+    console.log('First Position PublicKey:', myPositionPubkey)
 
     const onePosition = myPositions.find(({ publicKey }) =>
-        publicKey.equals(new web3.PublicKey('4s7jqEGTGSBAJQVELMafgzUmaGgB2XjMQENm9A58Tad8')) // adjust depending on output of myPositions
-      );
+        publicKey.equals(new web3.PublicKey(myPositionPubkey
+      ))
+    );
 
     // Create Jito client instance
-    const client = jito.searcher.searcherClient("frankfurt.mainnet.block-engine.jito.wtf") // can customize
+    const client = jito.searcher.searcherClient("frankfurt.mainnet.block-engine.jito.wtf") // can customize the client enpoint based on location
 
     // Get Jito Tip Account
     const jitoTipAccount = await getJitoTipAccount(client)

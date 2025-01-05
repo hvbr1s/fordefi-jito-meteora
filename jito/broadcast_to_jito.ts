@@ -1,9 +1,10 @@
 import fs from 'fs';
+import dotenv from 'dotenv'
 import axios from 'axios';
 import { signWithApiSigner } from '../signing/signer'
 import { get_tx } from '../utils/process_tx'
 
-
+dotenv.config()
 
 async function main(): Promise<void> {
   try {
