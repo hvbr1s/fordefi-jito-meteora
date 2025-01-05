@@ -102,7 +102,7 @@ async function main(){
     const getCreatePositionTxIx = await createLiquidityPositionIx(dlmmPool, activeBin, positionPDA, TRADER)
 
     // Create Jito client instance
-    const client = jito.searcher.searcherClient("frankfurt.mainnet.block-engine.jito.wtf") // can customize
+    const client = jito.searcher.searcherClient("frankfurt.mainnet.block-engine.jito.wtf") // can customize the client enpoint based on location
 
     // Get Jito Tip Account
     const jitoTipAccount = await getJitoTipAccount(client)
