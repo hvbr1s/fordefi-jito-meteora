@@ -16,7 +16,7 @@ const JITO_TIP = 1000 // Jito tip amount in lamports (1 SOL = 1e9 lamports)
 const SWAP_AMOUNT = '10000000' // in lamports
 const SLIPPAGE =  '50' //in bps
 const INPUT_TOKEN = 'So11111111111111111111111111111111111111112' // SOL
-const OUTPUT_TOKEN = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' // USDC Mint'
+const OUTPUT_TOKEN = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' // USDC Mint Address
 ////// TO CONFIGURE //////
 
 
@@ -29,7 +29,7 @@ async function getSwapQuote(swap_amount: string, slippage: string, input_token: 
             outputMint: output_token,
             amount: swap_amount,
             slippageBps: slippage,
-            maxAccounts: 12, // Limit accounts involved
+            maxAccounts: 32, // Limit accounts involved
             restrictIntermediateTokens: false, 
         }
     });
@@ -38,6 +38,8 @@ async function getSwapQuote(swap_amount: string, slippage: string, input_token: 
 }
 
 async function getSwapTxIx(quote: any, user: PublicKey) {
+
+    // We get a series of instructions and a lookup table from the API
     const response = await axios.post('https://quote-api.jup.ag/v6/swap-instructions', {
         quoteResponse: quote,
         userPublicKey: user.toBase58(),
@@ -47,12 +49,11 @@ async function getSwapTxIx(quote: any, user: PublicKey) {
             'Content-Type': 'application/json'
         }
     });
-
-    // We grab the lookUpTable address for later use
-    const lookUpTable = response.data.addressLookupTableAddresses[0]
     
-    // The API returns a series of in
     const { computeBudgetInstructions, setupInstructions, swapInstruction, cleanupInstruction } = response.data;
+    const lookUpTable = response.data.addressLookupTableAddresses[0]
+
+    // We map the instructions
     const instructions = [
         ...(computeBudgetInstructions ?? []),
         ...(setupInstructions ?? []),
