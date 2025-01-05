@@ -8,7 +8,7 @@ import { getPriorityFees } from '../utils/get_priority_fees'
 import { getCuLimit } from '../utils/get_cu_limit'
 import dotenv from 'dotenv'
 
-///// TO CONFIGURE 
+////// TO CONFIGURE //////
 dotenv.config()
 const QUICKNODE_KEY = process.env.QUICKNODE_MAINNET_KEY
 const VAULT_ID = process.env.VAULT_ID
@@ -18,7 +18,7 @@ const SOL_USDC_POOL = new web3.PublicKey('BVRbyLjjfSBcoyiYFuxbgKYnWuiFaF9CSXEa5v
 const TRADER = new web3.PublicKey(`${FORDEFI_SOLANA_ADDRESS}`)
 const JITO_TIP = 1000 // Jito tip amount in lamports (1 SOL = 1e9 lamports)
 const SWAP_AMOUNT = new BN(100);
-///// TO CONFIGURE 
+////// TO CONFIGURE //////
 
 async function createDlmm(){
 

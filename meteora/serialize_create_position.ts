@@ -1,8 +1,10 @@
 import fs from 'fs'
 import { BN } from 'bn.js'
 import DLMM from '@meteora-ag/dlmm'
+import * as meteora from '@meteora-ag/dlmm'
 import * as web3 from '@solana/web3.js'
 import * as jito from 'jito-ts'
+import { getAssociatedTokenAddress } from '@solana/spl-token'
 import { getJitoTipAccount } from '../utils/get_jito_tip_account'
 import { getPriorityFees } from '../utils/get_priority_fees'
 import { getCuLimit } from '../utils/get_cu_limit'
@@ -33,42 +35,71 @@ async function createDlmm(){
 
 }
 
-async function userPosition() {
+async function getActiveBin(dlmmPool:any) {
 
-    const dlmmPool = await createDlmm()
-    const { userPositions } = await dlmmPool.getPositionsByUserAndLbPair(TRADER);
-    // const activeBin = await dlmmPool.getActiveBin();
-    // const binData = userPositions[0].positionData.positionBinData;
-    
-    return userPositions
+    const activeBin = await dlmmPool.getActiveBin();
+
+    return activeBin
 }
 
-async function removeLiquidity(onePosition: any, TRADER: web3.PublicKey){
-    const dllmPool = await createDlmm()
+async function createLiquidityPositionIx(dlmmPool: any, activeBin: any, positionPDA: web3.PublicKey, trader: web3.PublicKey){
 
-    const binIdsToRemove = onePosition.positionData.positionBinData.map(
-        (bin:any) => bin.binId
+    const TOTAL_RANGE_INTERVAL = 5; // 10 bins on each side of the active bin
+    const minBinId = activeBin.bin_id - TOTAL_RANGE_INTERVAL;
+    const maxBinId = activeBin.bin_id + TOTAL_RANGE_INTERVAL;
+
+    // const newPositionKeypair = web3.Keypair.generate();
+
+    // const newPositionTx = await dlmmPool.createEmptyPosition({
+    //     positionPubKey: newPositionKeypair.publicKey,
+    //     minBinId,
+    //     maxBinId,
+    //     user: trader
+    // });
+    // console.log(newPositionTx)
+
+    const activeBinPricePerToken = dlmmPool.fromPricePerLamport(
+    Number(activeBin.price)
     );
+    const totalXAmount = new BN(10000000);
+    const totalYAmount = totalXAmount.mul(new BN(Number(activeBinPricePerToken)));
 
-    const removeLiquidityTx = await dllmPool.removeLiquidity({
-        position: onePosition.publicKey,
-        user: TRADER,
-        binIds: binIdsToRemove,
-        bps: new BN(10000), // we remove 10000 bps (100%) of the positions
-        shouldClaimAndClose: true, // and we also close the account and collect unclaimed rewards
+    // Create Position (Spot Balance deposit, Please refer ``example.ts` for more example)
+    const createPositionTx =
+        await dlmmPool.initializePositionAndAddLiquidityByStrategy({
+            positionPubKey: trader,
+            user: trader,
+            totalXAmount,
+            totalYAmount,
+            strategy: {
+            maxBinId,
+            minBinId,
+            strategyType: meteora.StrategyType.SpotBalanced,
+            },
     });
 
-    return removeLiquidityTx
+    return createPositionTx.instructions
+
 }
 
 async function main(){
 
-    const myPositions = await userPosition()
-    console.log(myPositions)
 
-    const onePosition = myPositions.find(({ publicKey }) =>
-        publicKey.equals(new web3.PublicKey('4s7jqEGTGSBAJQVELMafgzUmaGgB2XjMQENm9A58Tad8')) // adjust depending on output of myPositions
-      );
+    const dlmmPool = await createDlmm()
+
+    const activeBin =  await getActiveBin(dlmmPool)
+
+    const activeBinPriceLamport = activeBin.price;
+
+    const [positionPDA] = web3.PublicKey.findProgramAddressSync(
+        [
+            Buffer.from("position"), 
+            TRADER.toBuffer(),     
+        ],
+        dlmmPool.program.programId 
+    );
+
+    const getCreatePositionTxIx = await createLiquidityPositionIx(dlmmPool, activeBin, positionPDA, TRADER)
 
     // Create Jito client instance
     const client = jito.searcher.searcherClient("frankfurt.mainnet.block-engine.jito.wtf") // can customize
@@ -80,9 +111,9 @@ async function main(){
    const priorityFee = await getPriorityFees() // OR set a custom number
    console.log(`Priority fee -> ${priorityFee}`)
 
-   const removeLiquidityTx = new web3.Transaction()
+   const createPositionTx = new web3.Transaction()
 
-   removeLiquidityTx
+   createPositionTx
    .add(
        web3.SystemProgram.transfer({
            fromPubkey: TRADER,
@@ -94,37 +125,27 @@ async function main(){
         web3.ComputeBudgetProgram.setComputeUnitPrice({
             microLamports: priorityFee, 
         })
+    )
+    .add(
+        ...getCreatePositionTxIx
     )   
     
     // OPTIONAL -> set CU limits the Meteora SDK is doing it for us`
-    // const cuLimit = await getCuLimit(removeLiquidityTx, connection) 
-    // removeLiquidityTx
+    // const cuLimit = await getCuLimit(createPositionTx, connection) 
+    // createPositionTx
     // .add(
     //     web3.ComputeBudgetProgram.setComputeUnitLimit({
     //         units: targetComputeUnitsAmount ?? 100_000 //
     //     })
     // )
 
-    // Get remove liquidity instructions from Meteora
-    const removeLiquidityTxThrowaway = await removeLiquidity(onePosition, TRADER)
-    
-    // Is Array check
-    const removeLiquidityTxArray = Array.isArray(removeLiquidityTxThrowaway) 
-        ? removeLiquidityTxThrowaway 
-        : [removeLiquidityTxThrowaway];
-
-    // Extract Meteora-specific instructions from first transaction and add to our second transaction
-    for (const tx of removeLiquidityTxArray) {
-        removeLiquidityTx.add(...tx.instructions);
-    }
-
     // Set blockhash + fee payer
     const { blockhash } = await connection.getLatestBlockhash();
-    removeLiquidityTx.recentBlockhash = blockhash;
-    removeLiquidityTx.feePayer = TRADER;
+    createPositionTx.recentBlockhash = blockhash;
+    createPositionTx.feePayer = TRADER;
 
     // Compile + serialize the merged transactions
-    const comiledMessage = removeLiquidityTx.compileMessage();
+    const comiledMessage = createPositionTx.compileMessage();
     const serializedV0Message = Buffer.from(
         comiledMessage.serialize()
     ).toString('base64');
