@@ -7,6 +7,7 @@
     "transfer": "ts-node --project tsconfig.json ./transfer_sol.ts",
     "remove-meteora": "ts-node --project tsconfig.json ./meteora/serialize_remove_liquidity.ts",
     "swap-meteora": "ts-node --project tsconfig.json ./meteora/serialize_swap.ts",
+    "swap-jupiter": "ts-node --project tsconfig.json ./jupiter/serialize_swap.ts",
     "create-tx": "ts-node --project tsconfig.json create_and_sign_tx.ts",
     "jito": "ts-node --project tsconfig.json ./jito/broadcast_to_jito.ts"
   },
@@ -29,6 +30,8 @@
     "axios": "^1.7.9",
     "base-64": "^1.0.0",
     "bn.js": "^5.2.1",
+    "bs58": "^6.0.0",
+    "cross-fetch": "^4.1.0",
     "dotenv": "^16.4.7",
     "jito-ts": "^4.2.0",
     "jsonwebtoken": "^9.0.2"

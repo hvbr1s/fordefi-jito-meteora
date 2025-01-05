@@ -23,7 +23,7 @@ dotenv.config()
 const QUICKNODE_KEY = process.env.QUICKNODE_MAINNET_KEY
 const VAULT_ID = process.env.VAULT_ID
 const FORDEFI_SOLANA_ADDRESS = process.env.FORDEFI_SOLANA_ADDRESS
-const connection = new web3.Connection(`https://winter-solemn-sun.solana-mainnet.quiknode.pro/${QUICKNODE_KEY}/`)
+const connection = new web3.Connection(`${QUICKNODE_KEY}`)
 const SOL_USDC_POOL = new web3.PublicKey('BVRbyLjjfSBcoyiYFuxbgKYnWuiFaF9CSXEa5vdSZ9Hh') // info can be fetched from block explorer'
 const TRADER = new web3.PublicKey(`${FORDEFI_SOLANA_ADDRESS}`)
 const JITO_TIP = 1000 // Jito tip amount in lamports (1 SOL = 1e9 lamports)

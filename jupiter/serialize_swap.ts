@@ -1,83 +1,88 @@
 import fs from 'fs'
-import { BN } from 'bn.js'
-import DLMM from '@meteora-ag/dlmm'
+import axios from 'axios';
 import * as web3 from '@solana/web3.js'
 import * as jito from 'jito-ts'
+import bs58 from 'bs58';
+import dotenv from 'dotenv'
+import { PublicKey } from '@solana/web3.js';
 import { getJitoTipAccount } from '../utils/get_jito_tip_account'
 import { getPriorityFees } from '../utils/get_priority_fees'
-import { getCuLimit } from '../utils/get_cu_limit'
-import dotenv from 'dotenv'
 
 ////// TO CONFIGURE //////
 dotenv.config()
 const QUICKNODE_KEY = process.env.QUICKNODE_MAINNET_KEY
-const VAULT_ID = process.env.VAULT_ID
-const FORDEFI_SOLANA_ADDRESS = process.env.FORDEFI_SOLANA_ADDRESS
 const connection = new web3.Connection(`${QUICKNODE_KEY}`)
-const SOL_USDC_POOL = new web3.PublicKey('BVRbyLjjfSBcoyiYFuxbgKYnWuiFaF9CSXEa5vdSZ9Hh') // info can be fetched from block explorer'
-const TRADER = new web3.PublicKey(`${FORDEFI_SOLANA_ADDRESS}`)
+const VAULT_ID = process.env.VAULT_ID
+const FORDEFI_SOLANA_ADDRESS_PUBKEY = new web3.PublicKey("CtvSEG7ph7SQumMtbnSKtDTLoUQoy8bxPUcjwvmNgGim")
 const JITO_TIP = 1000 // Jito tip amount in lamports (1 SOL = 1e9 lamports)
-const SWAP_AMOUNT = new BN(100);
+const SWAP_AMOUNT = '10000000' // in lamports
+const SLIPPAGE =  '50' //in bps
+const INPUT_TOKEN = 'So11111111111111111111111111111111111111112' // SOL
+const OUTPUT_TOKEN = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' // USDC Mint'
 ////// TO CONFIGURE //////
 
-async function createDlmm(){
 
-    const dlmmPool = DLMM.create(connection, SOL_USDC_POOL); // your pool
+// Get quote from Jupiter
+async function getSwapQuote(swap_amount: string, slippage: string, input_token: string, output_token: string): Promise<any> {
+
+    const quoteResponse = await axios.get('https://quote-api.jup.ag/v6/quote', {
+        params: {
+            inputMint:input_token,
+            outputMint: output_token,
+            amount: swap_amount,
+            slippageBps: slippage
+        }
+    });
     
-    return dlmmPool
-
+    return quoteResponse.data;
 }
 
-async function swapQuote(pool: any){
-
-    const swapYtoX = true;
-    const binArrays = await pool.getBinArrayForSwap(swapYtoX);
-    const swapQuote = await pool.swapQuote(
-    SWAP_AMOUNT,
-    swapYtoX,
-    new BN(10),
-    binArrays
-    );
-
-    return swapQuote
-}
-
-async function swapIxGetter(pool:any, swapQuote: any, TRADER: web3.PublicKey){
-
-    // Create swap Tx
-    const swapTx = await pool.swap({
-        inToken: pool.tokenX.publicKey,
-        binArraysPubkey: swapQuote.binArraysPubkey,
-        inAmount: SWAP_AMOUNT,
-        lbPair: pool.pubkey,
-        user: TRADER,
-        minOutAmount: swapQuote.minOutAmount,
-        outToken: pool.tokenY.publicKey,
+async function getSwapTxIx(quote: any, user: PublicKey) {
+    const response = await axios.post('https://quote-api.jup.ag/v6/swap-instructions', {
+        quoteResponse: quote,
+        userPublicKey: user.toBase58(),
+    }, {
+        headers: {
+            'Content-Type': 'application/json'
+        }
     });
 
-    // return only the instructions
-    return swapTx.instructions
+    console.log(response.data)
+    
+    // The API returns { computeBudgetInstructions, setupInstructions, swapInstruction, cleanupInstruction }
+    const { computeBudgetInstructions, setupInstructions, swapInstruction, cleanupInstruction } = response.data;
+    
+    // Combine all instructions in the correct order
+    return [
+        ...(computeBudgetInstructions ?? []),
+        ...(setupInstructions ?? []),
+        swapInstruction,
+        ...(cleanupInstruction ? [cleanupInstruction] : [])
+    ].map((ix) => {
+        return {
+            programId: new PublicKey(ix.programId),
+            keys: ix.accounts.map((key: any) => ({
+                pubkey: new PublicKey(key.pubkey),
+                isSigner: key.isSigner,
+                isWritable: key.isWritable
+            })),
+            data: Buffer.from(ix.data, 'base64')
+        };
+    });
 }
 
 async function main(){
 
-    const getdlmmPool =  await createDlmm()
+    const quote = await getSwapQuote(SWAP_AMOUNT, SLIPPAGE, INPUT_TOKEN, OUTPUT_TOKEN)
 
-    // Get swap quote from Meteora
-    const getQuote = await swapQuote(getdlmmPool)
-    
+    const serializedJupiterSwapTxIx =  await getSwapTxIx(quote, FORDEFI_SOLANA_ADDRESS_PUBKEY)
+
     // Create Jito client instance
     const client = jito.searcher.searcherClient("frankfurt.mainnet.block-engine.jito.wtf") // can customize the client enpoint
 
     // Get Jito Tip Account
     const jitoTipAccount = await getJitoTipAccount(client)
     console.log(`Tip amount -> ${JITO_TIP}`)
-
-    // Get Priority fee
-    const priorityFee = await getPriorityFees() // OR set a custom number in lamports
-
-    // Get Meteora-specific swap instructions
-    const swapIx =  await swapIxGetter(getdlmmPool, getQuote, TRADER)
 
     // Create Tx
     const swapTx = new web3.Transaction()
@@ -86,33 +91,19 @@ async function main(){
     swapTx
     .add(
         web3.SystemProgram.transfer({
-            fromPubkey: TRADER,
+            fromPubkey: FORDEFI_SOLANA_ADDRESS_PUBKEY,
             toPubkey: jitoTipAccount,
             lamports: JITO_TIP, 
         })
     )
     .add(
-        web3.ComputeBudgetProgram.setComputeUnitPrice({
-            microLamports: priorityFee, 
-        })
+        ...serializedJupiterSwapTxIx
     )
-    .add(
-        ...swapIx
-    )
-
-    // OPTIONAL -> setting CU limit is already handled by the Meteora sdk
-    // const cuLimit = await getCuLimit(tippingTx, connection)
-    // swapTx
-    // .add(
-    //     web3.ComputeBudgetProgram.setComputeUnitLimit({
-    //         units: targetComputeUnitsAmount ?? 100_000 //
-    //     })
-    // )
 
     // Set blockhash + fee payer
     const { blockhash } = await connection.getLatestBlockhash();
     swapTx.recentBlockhash = blockhash;
-    swapTx.feePayer = TRADER;
+    swapTx.feePayer = FORDEFI_SOLANA_ADDRESS_PUBKEY;
 
     // INSPECT TX - FOR DEBUGGING ONLY
 
@@ -152,6 +143,7 @@ async function main(){
         'utf8'
     );
     console.log("Tx data written to .txs/serialized_tx.json");
-}
 
-main().catch(console.error);
+
+    }
+    main().catch(console.error);
