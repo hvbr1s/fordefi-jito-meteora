@@ -1,4 +1,3 @@
-import fs from 'fs';
 import dotenv from 'dotenv'
 import axios from 'axios';
 import { signWithApiSigner } from '../signing/signer'
@@ -6,29 +5,25 @@ import { get_tx } from '../utils/process_tx'
 
 dotenv.config()
 
-async function main(): Promise<void> {
+export async function pushToJito(transaction_id: string): Promise<void> {
   try {
-    // 1. Get tx ID from json file
-    const fileContent = fs.readFileSync('./txs/tx_to_broadcast.json', 'utf8');
-    const data = JSON.parse(fileContent);
-    const transactionId = data.id;
 
-    // 2. Prep variables
+    // 1. Prep variables
     const accessToken = process.env.FORDEFI_API_TOKEN || '';
-    const path = `/api/v1/transactions/${transactionId}`;
+    const path = `/api/v1/transactions/${transaction_id}`;
     const requestBody = '';
     const timestamp = new Date().getTime();; 
 
-    // 3. Sign payload
+    // 2. Sign payload
     const payload = `${path}|${timestamp}|${requestBody}`;
     const signature = await signWithApiSigner(payload);
 
-    // 4. Fetch raw signature from tx object
+    // 3. Fetch raw signature from tx object
     const fetchRawSignature = await get_tx(path, accessToken, signature, timestamp, requestBody);
     const rawTransactionBase64 = (await fetchRawSignature.raw_transaction);
     console.log(`Raw signature -> ${rawTransactionBase64}`);
 
-    // 5. Prepare Jito request
+    // 4. Prepare Jito request
     const url = 'https://mainnet.block-engine.jito.wtf/api/v1/transactions';
     const jitoPayload = {
       jsonrpc: '2.0',
@@ -37,7 +32,7 @@ async function main(): Promise<void> {
       params: [rawTransactionBase64, { encoding: 'base64' }],
     };
 
-    // 6. Send tx to Jito
+    // 5. Push tx to Jito
     const headers = { 'Content-Type': 'application/json' };
     const response = await axios.post(
       url, 
@@ -51,13 +46,9 @@ async function main(): Promise<void> {
   } catch (error: any) {
     console.error(`Error sending transaction: ${error}`);
 
-    // Handle Axios errors
+    // Handle Axios errors if any
     if (error.response) {
       console.error(`Response content: ${error.response.data}`);
     }
   }
 }
-
-main().catch((err) => {
-  console.error('Unhandled error:', err);
-});

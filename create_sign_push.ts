@@ -2,6 +2,7 @@ import fs from 'fs';
 import * as axios from 'axios';
 import { signWithApiSigner } from './signing/signer';
 import { createAndSignTx } from './utils/process_tx'
+import { pushToJito } from './jito/push_to_jito'
 import dotenv from 'dotenv'
 
 
@@ -71,13 +72,26 @@ async function main(): Promise<void> {
     const response = await ping(pathEndpoint, accessToken, payload);
     const data = response.data;
 
-    console.log(JSON.stringify(data, null, 2));
+    // FOR DEBUGGING
+    // console.log(JSON.stringify(data, null, 2));
+    // // Save signed tx to file
+    // fs.writeFileSync('./txs/tx_to_broadcast.json', JSON.stringify(data, null, 2), 'utf-8');
+    // console.log("Data has been saved to './txs/tx_to_broadcast.json'");
 
-    // Save signed tx to file
-    fs.writeFileSync('./txs/tx_to_broadcast.json', JSON.stringify(data, null, 2), 'utf-8');
-    console.log("Data has been saved to './txs/tx_to_broadcast.json'");
+    try {
+
+      const transaction_id = data.id
+      console.log(`Transaction ID -> ${transaction_id}`)
+
+      await pushToJito(transaction_id)
+
+    } catch (error: any){
+      console.error(`Failed to push the transaction to Jito: ${error.message}`)
+    }
+
+
   } catch (error: any) {
-    console.error(`Error: ${error.message}`);
+    console.error(`Failed to sign the transaction: ${error.message}`);
   }
 }
 

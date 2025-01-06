@@ -80,7 +80,6 @@ async function getSwapTxIx(quote: any, user: PublicKey) {
 
 async function main(){
 
-
     // We generate a quote from Jupiter
     const quote = await getSwapQuote(SWAP_AMOUNT, SLIPPAGE, INPUT_TOKEN, OUTPUT_TOKEN)
 
@@ -144,7 +143,7 @@ async function main(){
         "wait_for_state": "signed" // only for create-and-wait
     };
 
-    // Write json body to file
+    // For debugging - write json body to file
     fs.writeFileSync(
         './txs/serialized_tx.json',
         JSON.stringify(jsonBody, null, 2), 
