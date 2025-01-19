@@ -16,7 +16,8 @@ const JITO_TIP = 1000 // Jito tip amount in lamports (1 SOL = 1e9 lamports)
 const SWAP_AMOUNT = '10000000' // in lamports
 const SLIPPAGE =  '50' //in bps
 const INPUT_TOKEN = 'So11111111111111111111111111111111111111112' // SOL
-const OUTPUT_TOKEN = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' // USDC Mint Address
+// const OUTPUT_TOKEN = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' // USDC Mint Address
+const OUTPUT_TOKEN = '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN'
 ////// TO CONFIGURE //////
 
 
@@ -33,6 +34,8 @@ async function getSwapQuote(swap_amount: string, slippage: string, input_token: 
             restrictIntermediateTokens: false, 
         }
     });
+
+    console.log(quoteResponse.data)
     
     return quoteResponse.data;
 }

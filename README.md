@@ -21,7 +21,8 @@ A tool for creating and broadcasting Solana transactions with Jito's Block Engin
    FORDEFI_SOLANA_ADDRESS=your_solana_vault_address
    QUICKNODE_MAINNET_KEY=your_rpc_access_token
    ```
-5. Place your API Signer's `.pem` private key file in the `/secret` directory in the root folder.
+5. Place your API Signer's `.pem` private key file in the `/secret` directory at the root of this project.
+6. Create an empty `txs` directory at the root of this project. 
 
 ## Configuration for Meteora operations:
 
@@ -32,5 +33,4 @@ Navigate to the `./meteora` folder, select a script and add your variables to th
 Execute the following scripts in order:
 
 1. `npm run swap-meteora` - Prepares the serialized tx payload
-2. `npm run create-tx` - Creates and signs the transaction
-3. `npm run jito` - Broadcast the transaction to Jito and returns the transaction hash
+2. `npm run create-tx` - Creates, signs and broadcast the transaction to Jito's Block Engine.
