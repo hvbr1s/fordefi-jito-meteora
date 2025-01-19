@@ -23,10 +23,7 @@ const TARGET_TRUMP_PCT = 0.70;
 const THRESHOLD = 0.05;  // 5% off, we only rebalance if we're off by 5%
 
 
-async function getTokenBalance(
-  ownerPubkey: PublicKey,
-  mintAddress: string
-): Promise<number> {
+async function getTokenBalance(ownerPubkey: PublicKey, mintAddress: string): Promise<number> {
   const tokenAccounts = await connection.getTokenAccountsByOwner(
     ownerPubkey,
     { mint: new PublicKey(mintAddress) }
@@ -138,13 +135,13 @@ async function getSwapTxIx(
 // Rebalancer logic
 async function main() {
   // -------------------------------------
-  // (A) Fetch current balances
+  // (A) Fetch current balances from Fordefi Vault
   // -------------------------------------
   const trumpBalance = await getTokenBalance(FORDEFI_SOLANA_ADDRESS_PUBKEY, TRUMP_MINT);
   const usdcBalance  = await getTokenBalance(FORDEFI_SOLANA_ADDRESS_PUBKEY, USDC_MINT);
 
   // -------------------------------------
-  // (B) Get TRUMP price in USDC 
+  // (B) Get TRUMP price in USDC from Jupiter API
   // -------------------------------------
   const trumpPriceInUsdc = await getTRUMPPriceInUSDC();
 
@@ -154,7 +151,7 @@ async function main() {
   // Your total “portfolio” in USDC terms
   const totalValueInUsdc = trumpValueInUsdc + usdcBalance;
   if (totalValueInUsdc === 0) {
-    console.log("You have no TRUMP or USDC at all—nothing to rebalance.");
+    console.log("You have no TRUMP or USDC — nothing to rebalance.");
     return;
   }
 
@@ -168,7 +165,7 @@ async function main() {
   // -------------------------------------
   // (C) Check if we are within threshold
   // -------------------------------------
-  // If the difference from 70% is less than 2% (for example), skip
+  // If the difference from 70% is less than 5% (for example), skip
   const diff = Math.abs(currentTrumpRatio - TARGET_TRUMP_PCT);
   if (diff < THRESHOLD) {
     console.log("Already within target ratio; no rebalance needed.");
