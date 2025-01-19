@@ -9,7 +9,9 @@
     "swap-meteora": "ts-node --project tsconfig.json ./meteora/serialize_swap.ts",
     "swap-jupiter": "ts-node --project tsconfig.json ./jupiter/serialize_swap.ts",
     "create-tx": "ts-node --project tsconfig.json create_sign_push.ts",
-    "jito": "ts-node --project tsconfig.json ./jito/broadcast_to_jito.ts"
+    "jito": "ts-node --project tsconfig.json ./jito/broadcast_to_jito.ts",
+    "rebalance-jupiter": "ts-node --project tsconfig.json ./jupiter/serialize_rebalancer.ts",
+    "rebalance-meteora": "ts-node --project tsconfig.json ./meteora/serialize_rebalancer.ts"
   },
   "keywords": [],
   "author": "",
