@@ -1,9 +1,8 @@
-import fs from 'fs';
-import * as axios from 'axios';
 import { signWithApiSigner } from './signing/signer';
 import { createAndSignTx } from './utils/process_tx'
 import { pushToJito } from './jito/push_to_jito'
 import { createJupiterSwapTx } from './jupiter/serialize_swap'
+import { createMeteoraSwapTx } from './meteora/serialize_swap'
 import dotenv from 'dotenv'
 
 
@@ -16,8 +15,10 @@ async function main(): Promise<void> {
     console.error('Error: FORDEFI_API_TOKEN environment variable is not set');
     return;
   }
-  // We create the tx (In this case the JUpiter swap but you can change it)
+  // We create the tx (In this case we're using Jupiter)
   const jsonBody = await createJupiterSwapTx()
+  // (... but you can change it to Meteora)
+  // const jsonBody = await createMeteoraSwapTx()
 
   // Fetch serialized tx from json file
   const requestBody = JSON.stringify(jsonBody);
