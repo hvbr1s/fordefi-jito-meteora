@@ -24,9 +24,9 @@ async function main(): Promise<void> {
     return;
   }
   // We create the tx (In this case we're using Jupiter)
-  const jsonBody = await createJupiterSwapTx(fordefiConfig.vaultId, fordefiConfig.fordefiSolanaVaultAddress)
+  //const jsonBody = await createJupiterSwapTx(fordefiConfig.vaultId, fordefiConfig.fordefiSolanaVaultAddress)
   // (... but you can change it to Meteora)
-  // const jsonBody = await createMeteoraSwapTx(fordefiConfig.vaultId, fordefiConfig.fordefiSolanaVaultAddress)
+  const jsonBody = await createMeteoraSwapTx(fordefiConfig.vaultId, fordefiConfig.fordefiSolanaVaultAddress)
 
   // Fetch serialized tx from json file
   const requestBody = JSON.stringify(jsonBody);
