@@ -16,19 +16,18 @@ A tool for creating and broadcasting Solana transactions with Jito's Block Engin
 3. Run `npm install` to install all the dependencies.
 4. Create a `.env` file in the root directory with the following variables:
    ```typescript
-   FORDEFI_API_TOKEN=your_api_token
+   FORDEFI_API_TOKEN="your_api_token" // Your Fordefi API User JWT
    RPC_PROVIDER_KEY=your_rpc_access_token // only if you're not using a public RPC provider
    ```
 5. Create a `/secret` folder at the root of this project and place your API User's `.pem` private key file in the folder.
 6. Create an empty `txs` directory at the root of this project.
-7. In `create_sign_push.ts`, configure the following
+7. In `create_sign_push.ts`, configure the following:
 ```typescript
 const fordefiConfig = {
-  accessToken: process.env.FORDEFI_API_TOKEN,
+  //...
   vaultId: "<your_Fordefi_Solana_Vault_Id>",
-  fordefiSolanaVaultAddress:"your_Fordefi_Solana_Vault_address",
-  privateKeyPem: fs.readFileSync('./secret/private.pem', 'utf8'),
-  apiPathEndpoint: '/api/v1/transactions/create-and-wait'
+  fordefiSolanaVaultAddress:"<your_Fordefi_Solana_Vault_address>",
+  //... the rest of the config object can remain the same
 };
 ``` 
 
