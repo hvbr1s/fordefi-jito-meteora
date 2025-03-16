@@ -35,7 +35,7 @@ async function main(): Promise<void> {
   const payload = `${fordefiConfig.apiPathEndpoint}|${timestamp}|${requestBody}`;
 
   try {
-      // Send tx payload to API Signer for signature
+    // Send tx payload to API Signer for signature
     const signature = await signWithApiSigner(payload, fordefiConfig.privateKeyPem);
     
     // Send signed payload to Fordefi for MPC signature
