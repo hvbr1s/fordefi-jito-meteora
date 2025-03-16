@@ -35,4 +35,17 @@ const fordefiConfig = {
 ## Example usage for a swap on Meteora
 
 1. Navigate to the `./meteora` folder, select a script and add your variables to the `TO CONFIGURE` section
-2. Run `npm run tx` to create and sign the transaction with your Fordefi Vault then broadcast the transaction to Jito's Block Engine.
+2. In the `create_sign_push.ts` file, make sure the `main()` function calls `createMeteoraSwapTx()` as in:
+```typescript
+const jsonBody = await createMeteoraSwapTx(fordefiConfig.vaultId, fordefiConfig.fordefiSolanaVaultAddress)
+```
+3. Run `npm run tx` to create and sign the transaction with your Fordefi Vault then send the transaction to Jito's Block Engine.
+
+## Example usage for a swap on Jupiter
+
+1. Navigate to the `./jupiter` folder, select a script and add your variables to the `TO CONFIGURE` section
+2. In the `create_sign_push.ts` file, make sure the `main()` function calls `createJupiterSwapTx()` as in:
+```typescript
+const jsonBody = await createJupiterSwapTx(fordefiConfig.vaultId, fordefiConfig.fordefiSolanaVaultAddress)
+```
+3. Run `npm run tx` to create and sign the transaction with your Fordefi Vault then send the transaction to Jito's Block Engine.
