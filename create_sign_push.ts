@@ -11,7 +11,6 @@ import fs from 'fs'
 dotenv.config()
 const fordefiConfig = {
   accessToken: process.env.FORDEFI_API_TOKEN,
-  privateKeyPath: "./fordefi_secret/private.pem",
   vaultId: "9597e08a-32a8-4f96-a043-a3e7f1675f8d",
   fordefiSolanaVaultAddress:"CtvSEG7ph7SQumMtbnSKtDTLoUQoy8bxPUcjwvmNgGim",
   privateKeyPem: fs.readFileSync('./secret/private.pem', 'utf8'),

@@ -9,8 +9,8 @@ import dotenv from 'dotenv'
 
 ////// TO CONFIGURE //////
 dotenv.config()
-const QUICKNODE_KEY = process.env.QUICKNODE_MAINNET_KEY
-const connection = new web3.Connection(`${QUICKNODE_KEY}`)
+const rpcProvider = process.env.RPC_PROVIDER_KEY
+const connection = new web3.Connection(`${rpcProvider}`)
 const SOL_USDC_POOL = new web3.PublicKey('BVRbyLjjfSBcoyiYFuxbgKYnWuiFaF9CSXEa5vdSZ9Hh') // info can be fetched from block explorer'
 const TRUMP_USDC_POOL = new web3.PublicKey('A8nPhpCJqtqHdqUk35Uj9Hy2YsGXFkCZGuNwvkD3k7VC')
 const JITO_TIP = 1000 // Jito tip amount in lamports (1 SOL = 1e9 lamports)
