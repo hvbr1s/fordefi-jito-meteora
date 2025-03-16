@@ -60,7 +60,7 @@ async function swapIxGetter(pool:any, swapQuote: any, TRADER: web3.PublicKey){
     return swapTx.instructions
 }
 
-async function main(){
+export async function createMeteoraSwapTx(){
 
     const getdlmmPool =  await createDlmm()
 
@@ -132,6 +132,7 @@ async function main(){
 
     // Create JSON
     const jsonBody = {
+
         "vault_id": VAULT_ID, // Replace with your vault ID
         "signer_type": "api_signer",
         "sign_mode": "auto", // IMPORTANT
@@ -143,15 +144,15 @@ async function main(){
             "chain": "solana_mainnet"
         },
         "wait_for_state": "signed" // only for create-and-wait
+        
     };
 
-    // Write json body to file
-    fs.writeFileSync(
-        './txs/serialized_tx.json',
-        JSON.stringify(jsonBody, null, 2), 
-        'utf8'
-    );
-    console.log("Tx data written to .txs/serialized_tx.json");
+    // // DEBUG - Write json body to file
+    // fs.writeFileSync(
+    //     './txs/serialized_tx.json',
+    //     JSON.stringify(jsonBody, null, 2), 
+    //     'utf8'
+    // );
+    // console.log("Tx data written to .txs/serialized_tx.json");
+    return jsonBody
 }
-
-main().catch(console.error);
