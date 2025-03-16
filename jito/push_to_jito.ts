@@ -5,18 +5,17 @@ import { get_tx } from '../utils/process_tx'
 
 dotenv.config()
 
-export async function pushToJito(transaction_id: string): Promise<void> {
+export async function pushToJito(transaction_id: string, accessToken:string, privateKeyPem: string): Promise<void> {
   try {
 
     // 1. Prep variables
-    const accessToken = process.env.FORDEFI_API_TOKEN || '';
     const path = `/api/v1/transactions/${transaction_id}`;
     const requestBody = '';
     const timestamp = new Date().getTime();; 
 
     // 2. Sign payload
     const payload = `${path}|${timestamp}|${requestBody}`;
-    const signature = await signWithApiSigner(payload);
+    const signature = await signWithApiSigner(payload, privateKeyPem);
 
     // 3. Fetch raw signature from tx object
     const fetchRawSignature = await get_tx(path, accessToken, signature, timestamp, requestBody);

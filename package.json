@@ -3,15 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "position-meteora": "ts-node --project tsconfig.json ./meteora/serialize_create_position.ts",
-    "transfer": "ts-node --project tsconfig.json ./transfer_sol.ts",
-    "remove-meteora": "ts-node --project tsconfig.json ./meteora/serialize_remove_liquidity.ts",
-    "swap-meteora": "ts-node --project tsconfig.json ./meteora/serialize_swap.ts",
-    "swap-jupiter": "ts-node --project tsconfig.json ./jupiter/serialize_swap.ts",
-    "create-tx": "ts-node --project tsconfig.json create_sign_push.ts",
-    "jito": "ts-node --project tsconfig.json ./jito/broadcast_to_jito.ts",
-    "rebalance-jupiter": "ts-node --project tsconfig.json ./jupiter/serialize_rebalancer.ts",
-    "rebalance-meteora": "ts-node --project tsconfig.json ./meteora/serialize_rebalancer.ts"
+    "tx": "ts-node --project tsconfig.json create_sign_push.ts"
   },
   "keywords": [],
   "author": "",
