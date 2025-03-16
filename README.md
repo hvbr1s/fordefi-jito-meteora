@@ -6,18 +6,18 @@ A tool for creating and broadcasting Solana transactions with Jito's Block Engin
 
 - Fordefi API user token and API Signer set up ([link to tutorial](https://docs.fordefi.com/reference/getting-started))
 - Solana Vault in Foredefi
-- RPC token (Quicknode, Helius, etc.)
-- Python 3.x installed.
+- Python 3.x installed
+- OPTIONAL: RPC token (Quicknode, Helius, etc.) if you do not want to use Solana's public RPC endpoint
 
 ## Setup
 
 1. Create a Fordefi API user and API Signer ([tutorial](https://docs.fordefi.com/reference/getting-started))
-2. Clone this repository
+2. Clone this repository.
 3. Run `npm install` to install all the dependencies.
 4. Create a `.env` file in the root directory with the following variables:
    ```typescript
-   FORDEFI_API_TOKEN="your_api_token" // Your Fordefi API User JWT
-   RPC_PROVIDER_KEY=your_rpc_access_token // only if you're not using a public RPC provider
+   FORDEFI_API_TOKEN="<your_api_token>" // Your Fordefi API User JWT
+   RPC_PROVIDER_KEY="<your_rpc_access_token>" // ONLY if you're not using a public RPC provider
    ```
 5. Create a `/secret` folder at the root of this project and place your API User's `.pem` private key file in the folder.
 6. Create an empty `txs` directory at the root of this project.
@@ -38,7 +38,7 @@ const fordefiConfig = {
 ```typescript
 const jsonBody = await createMeteoraSwapTx(fordefiConfig.vaultId, fordefiConfig.fordefiSolanaVaultAddress)
 ```
-3. Run `npm run tx` to create and sign the transaction with your Fordefi Vault then send the transaction to Jito's Block Engine.
+3. Run `npm run tx`. The script will create and sign a swap transaction with your Fordefi Vault and send the transaction to Jito's Block Engine.
 
 ## Example usage for a swap on Jupiter
 
@@ -47,4 +47,4 @@ const jsonBody = await createMeteoraSwapTx(fordefiConfig.vaultId, fordefiConfig.
 ```typescript
 const jsonBody = await createJupiterSwapTx(fordefiConfig.vaultId, fordefiConfig.fordefiSolanaVaultAddress)
 ```
-3. Run `npm run tx` to create and sign the transaction with your Fordefi Vault then send the transaction to Jito's Block Engine.
+3. Run `npm run tx`. The script will create and sign a swap transaction with your Fordefi Vault and send the transaction to Jito's Block Engine.
