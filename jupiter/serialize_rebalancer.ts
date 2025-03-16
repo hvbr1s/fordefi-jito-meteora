@@ -67,7 +67,7 @@ async function getTRUMPPriceInUSDC(): Promise<number> {
       console.log(`TRUMP price -> ${trumpPrice}`)
     
       return trumpPrice
-  }
+}
 
 // We get a Swap quote from Jupiter and return the data from the respone object
 async function getSwapQuote(
