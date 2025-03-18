@@ -1,7 +1,6 @@
 import dotenv from 'dotenv'
 import axios from 'axios';
-import { signWithApiSigner } from '../signing/signer'
-import { get_tx } from '../utils/process_tx'
+import { get_tx } from './utils/process_tx'
 
 dotenv.config()
 
